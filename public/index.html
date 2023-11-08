@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body>
+  <div id="chat">
+    <ul id="messages"></ul>
+    <input id="message" autocomplete="off" /><button onclick="sendMessage()">Send</button>
+  </div>
+  <div>
+    <select name="users" id="users" onchange="userChoice()">
+      <option value="francois.cheval">François Cheval</option>
+      <option value="malcom.neerman">Malcom Neerman</option>
+      <option value="martin.jourjon">Martin Jourjon</option>
+      <option value="xavier.gauchoux">Xavier Gauchoux</option>
+    </select>
+  </div>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+    const socket = io();
+    var room = "";
+  
+    function userChoice(){
+      var dropdown = document.getElementById("users");
+      const val = dropdown.value
+      if(val){
+        socket.emit('join', val)
+        room=val
+      }
+    }
+
+    function sendMessage() {
+      const message = $('#message').val();
+      if (message) {
+        socket.emit('message',{room,message});
+        $('#message').val('');
+      }
+    }
+    socket.on('message', (message) => {
+      $('#messages').append($('<li>').text(message));
+    });
+
+  </script>
+</body>
+</html>
