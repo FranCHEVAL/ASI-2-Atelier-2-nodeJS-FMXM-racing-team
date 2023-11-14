@@ -1,22 +1,29 @@
-const express = require('express');
-const http = require('http');
-const socketIo = require('socket.io');
+import express from 'express'
+import {Server} from 'socket.io'
+import {createServer} from 'http'
 
 const app = express();
-const server = http.createServer(app);
-const io = socketIo(server);
+const server = createServer(app);
 
-app.use(express.static(__dirname + '/public'));
+//For local developpement
+const io = new Server(server,{
+  cors: {
+    origin: "http://localhost:3000"
+  }
+})
+
+app.use(express.static('/public'));
 
 io.on('connection', (socket) => {
   console.log('A user connected');
 
   socket.on('join',(room) => {
     socket.join(room);
+    console.log("User " + room+ " is listening for message")
   })
 
-  socket.on('message', (data) => {
-    io.to(data.room).emit('message', data.message);
+  socket.on('sendMessage', (data) => {
+    io.to(data.receiver).emit('receiveMessage', data.message);
   });
 
   socket.on('disconnect', () => {
@@ -24,6 +31,6 @@ io.on('connection', (socket) => {
   });
 });
 
-server.listen(3000, () => {
-  console.log('Server is running on http://localhost:3000');
+server.listen(3100, () => {
+  console.log('Server is running on http://localhost:3100');
 });
