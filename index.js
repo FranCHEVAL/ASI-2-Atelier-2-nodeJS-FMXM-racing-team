@@ -1,9 +1,11 @@
 import express from 'express'
 import {Server} from 'socket.io'
 import {createServer} from 'http'
+import GameManager from "./service/gameManager.js";
 
 const app = express();
 const server = createServer(app);
+const gameManager = new GameManager();
 
 //For local developpement
 const io = new Server(server,{
@@ -29,6 +31,9 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log('A user disconnected');
   });
+
+  /** Action du jeu */
+
 });
 
 server.listen(3100, () => {
