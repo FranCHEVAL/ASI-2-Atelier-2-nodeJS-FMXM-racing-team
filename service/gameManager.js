@@ -13,11 +13,15 @@ class GameManager {
     /** ***************************** */
 
     /** On JOIN_GAME **/
-    async findGameOrCreate(player1, name, deckIds) {
+    async findGameOrCreate(player1, name, deckIds, socketId) {
         for (const game of this.games.values()) {
+            if (game.players.find(player => player.id === player1)) {
+                console.log('Le joueur ' + player1 + ' est déjà dans une partie');
+                return game;
+            }
             if (game.status === 'waiting') {
                 console.log('Found a game ' + game.id + ' for player ' + player1);
-                const player = await this.createPlayer(player1, name, deckIds);
+                const player = await this.createPlayer(player1, name, deckIds, socketId);
                 game.players.push(player);
                 return game;
             }
@@ -25,6 +29,16 @@ class GameManager {
 
         // Si on ne trouve pas de game libre ou en créer une
         return this.createGame(player1, name, deckIds);
+    }
+
+    checkPlayerAlreadyInGame(player1) {
+        for (const game of this.games.values()) {
+                const player = game.players.find(player => player.id === player1);
+                if (player) {
+                    return game;
+                }
+        }
+        return undefined;
     }
 
     async getCards(cardsIds) {
@@ -35,20 +49,21 @@ class GameManager {
         return cards
     }
 
-    async createPlayer(playerId, name, deckIds) {
+    async createPlayer(playerId, name, deckIds, socketId) {
         const cards = await this.getCards(deckIds)
         return {
             id: playerId,
             name: name,
             action: 10,
             deck: cards,
+            socketId: socketId
         }
     }
 
-    async createGame(playerId, name, deckIds) {
+    async createGame(playerId, name, deckIds, socketId) {
         // Initialisation d'une nouvelle partie
         const gameId = uuid();
-        const player = await this.createPlayer(playerId, name, deckIds)
+        const player = await this.createPlayer(playerId, name, deckIds, socketId)
         this.games.set(gameId, {
             id: gameId,
             players: [player],
@@ -107,9 +122,13 @@ class GameManager {
 
     /** On PLAY_CARD **/
     attack(gameId, playerId, targetPlayer, cardId, targetCardId) {
-        const player = this.games.get(gameId).players.find(player => player.id === playerId);
+        const game = this.games.get(gameId)
+        const player = game.players.find(player => player.id === playerId);
         if (player.action < 0) {
-            return "Pas assez d'action"
+           throw new Error("Pas assez d'action")
+        }
+        if (playerId !== game.currentPlayerId) {
+            throw new Error("Ce n'est pas votre tour")
         }
         const card = player.deck[cardId];
         const targetCard = targetPlayer.deck[targetCardId];
@@ -143,6 +162,14 @@ class GameManager {
         }
     }
 
+    checkPlayerDisconnected(socketId) {
+        for (const game of this.games.values()) {
+            const player1 = game.players.find(player => player.socketId === socketId);
+            if (player1) {
+                this.endGame(game.id, game.players.find(player => player.id !== player1.id).id);
+            }
+        }
+    }
 }
 
 export default GameManager;
