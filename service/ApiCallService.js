@@ -2,7 +2,7 @@ import axios from "axios";
 
 class ApiCallService {
     constructor() {
-        this.baseUrl = 'http://localhost:8080'; // Remplacez par votre URL de base
+        this.baseUrl = 'http://127.0.0.1:8084'; // Remplacez par votre URL de base
         this.client = axios.create({ baseURL: this.baseUrl });
     }
 

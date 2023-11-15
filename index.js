@@ -30,15 +30,12 @@ io.on('connection', (socket) => {
 
   /** Action du jeu */
 
-  socket.on('findGame', (playerId, name, deckIds) => {
-    const game = gameManager.findGameOrCreate(playerId, name, deckIds);
-
-    // Rajoute les client dans une room
-    if (game) {
+  socket.on('findGame', (playerId, name, deckIds, callback) => {
+    gameManager.findGameOrCreate(playerId, name, deckIds).then((game) => {
       socket.join(game.id);
-      socket.emit('gameFound', game);
       io.to(game.id).emit('playerJoined', { playerId: playerId, playerName: game.players.find(player => player.id === playerId).name });
-    }
+      callback({ status: 'ok', game: game });
+    });
   });
 
   socket.on('playerAttack', (gameId, playerId, cardId, targetPlayerId, targetCardId, callback) => {
