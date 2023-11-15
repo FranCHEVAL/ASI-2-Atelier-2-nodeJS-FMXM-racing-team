@@ -10,6 +10,8 @@ const server = createServer(app);
 //For local developpement
 const io = initIo(server);
 
+const chatHistory = []
+
 app.use(express.static('/public'));
 
 io.on('connection', (socket, idUser) => {
@@ -19,13 +21,21 @@ io.on('connection', (socket, idUser) => {
   // Controller Initialization
   GameController.init(socket, user);
 
-  socket.on('join',(room) => {
-    socket.join(room);
-    console.log("User " + room+ " is listening for message")
+  socket.on('join',(roomPayload) => {
+    socket.join(roomPayload.sender);
+    console.log("User " + roomPayload.sender+ "is listening for new messages ")
+    const chat = chatHistory.filter(
+      x=>(x.sender==roomPayload.sender
+      &&x.receiver==roomPayload.receiver)||
+      (x.sender==roomPayload.receiver
+        &&x.receiver==roomPayload.sender)
+    )
+    io.to(roomPayload.sender).emit('loadChatHistory', chat)
   })
 
   socket.on('sendMessage', (data) => {
-    io.to(data.receiver).emit('receiveMessage', data.message);
+    chatHistory.push(data)
+    io.to(data.receiver).emit('receiveMessage', data);
   });
 
   socket.on('disconnect', () => {
