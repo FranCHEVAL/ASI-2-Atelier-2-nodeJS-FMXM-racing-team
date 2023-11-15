@@ -1,4 +1,4 @@
-const axios = require('axios');
+import axios from "axios";
 
 class ApiCallService {
     constructor() {
@@ -27,4 +27,4 @@ class ApiCallService {
     }
 }
 
-module.exports = ApiCallService;
+export default ApiCallService;

@@ -1,14 +1,14 @@
-import socketIO from 'socket.io';
 import { Server } from "socket.io";
 
 let io;
 
-export const init = (server) => {
+export const initIo = (server) => {
     io = new Server(server, {
         cors: {
             origin: "http://localhost:3000"
         }
     });
+    console.log('Socket.io initialized');
     return io;
 };
 

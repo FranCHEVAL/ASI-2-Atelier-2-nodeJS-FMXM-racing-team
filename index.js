@@ -2,14 +2,13 @@ import express from 'express'
 import {Server} from 'socket.io'
 import {createServer} from 'http'
 import GameManager from "./service/gameManager.js";
-import socketServer from "./socketServer.js";
-
+import {initIo} from "./socketServer.js";
 const app = express();
 const server = createServer(app);
 const gameManager = new GameManager();
 
 //For local developpement
-const io = socketServer.init(server);
+const io = initIo(server);
 
 app.use(express.static('/public'));
 

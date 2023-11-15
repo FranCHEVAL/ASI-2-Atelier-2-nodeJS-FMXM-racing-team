@@ -1,6 +1,6 @@
 import { uuid } from 'uuidv4';
 import {getIO} from "../socketServer.js";
-const ApiCallService = require("./ApiCallService.js");
+import ApiCallService from "./ApiCallService.js";
 const apiCallService = new ApiCallService();
 
 class GameManager {
@@ -152,4 +152,4 @@ class GameManager {
 
 }
 
-module.exports = GameManager;
+export default GameManager;
