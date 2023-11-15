@@ -1,6 +1,7 @@
 import express from 'express'
 import {Server} from 'socket.io'
 import {createServer} from 'http'
+import fetch from 'node-fetch';
 
 const app = express();
 const server = createServer(app);
@@ -10,7 +11,7 @@ const io = new Server(server,{
   cors: {
     origin: "http://localhost:3000"
   }
-})
+});
 
 app.use(express.static('/public'));
 
