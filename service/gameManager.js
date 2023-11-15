@@ -1,6 +1,7 @@
-const { v4: uuidv4 } = require('uuid');
-
-const apiCallService = require('./ApiCallService');
+import { uuid } from 'uuidv4';
+import {getIO} from "../socketServer.js";
+const ApiCallService = require("./ApiCallService.js");
+const apiCallService = new ApiCallService();
 
 class GameManager {
     constructor() {
@@ -8,14 +9,14 @@ class GameManager {
             id: '1234',
             players: [{
                 id: '1234',
-                selectedCard: [1, 2, 5],
+                name: 'Player 1',
                 deck: {},
             }, {
                 id: '5678',
-                selectedCard: [1, 2, 5],
+                name: 'Player 2',
                 deck: {},
             }],
-            status: 'waiting',
+            status: 'inProgress',
             currentPlayerId: '1234',
 
         }]; // Stocke les jeux en cours
@@ -26,84 +27,51 @@ class GameManager {
     /** ***************************** */
 
     /** On JOIN_GAME **/
-    findGameOrCreate(player1) {
+    async findGameOrCreate(player1, name, deckIds) {
         for (const game of this.games) {
             if (game.status === 'waiting') {
-                game.players.push(player1);
+                console.log('Found a game ' + game.id + ' for player ' + player1);
+                const player = await this.createPlayer(player1, name, deckIds);
+                game.players.push(player);
+                this.startGame(game.id);
                 return game;
             }
         }
 
         // Si on ne trouve pas de game libre ou en créer une
-        return this.createGame(player1);
+        return this.createGame(player1, name, deckIds);
     }
 
-    /** On SELECT_CARDS **/
-    selectCards(gameId, playerId, cardIds) {
-        // Sélection des cartes
-        const game = this.games[gameId];
-        if (game) {
-            const player = game.players.find(player => player.id === playerId);
-            if (player) {
-                player.selectedCard = cardIds;
-            }
-            this.checkIfAllPlayersHaveSelectedCards(gameId);
+    async getCards(cardsIds) {
+        const cards = {}
+        for (const cardId of cardsIds) {
+            cards[cardId] = await apiCallService.getCard(cardId);
         }
+        return cards
     }
 
-    checkIfAllPlayersHaveSelectedCards(gameId) {
-        // Vérifie si tous les joueurs ont sélectionné leurs cartes
-        const game = this.games[gameId];
-        if (game) {
-            if (game.players.every(player => player.selectedCard)) {
-                this.initGame(gameId).then(r =>
-                    this.startGame(gameId)
-                );
-            }
-        }
-    }
-
-    async initGame(gameId) {
-        // Charge les informations des cartes
-        const game = this.games[gameId];
-        if (game) {
-            for (const player of game.players) {
-                for (const cardId of player.selectedCard) {
-                    const card = await apiCallService.getCard(cardId);
-                    player.deck[cardId] = card;
-                }
-            }
-        }
-    }
-
-    createPlayer(playerId) {
+    async createPlayer(playerId, name, deckIds) {
+        const cards = await this.getCards(deckIds)
         return {
             id: playerId,
+            name: name,
             action: 10,
-            selectedCard: null,
-            deck: {},
+            deck: cards,
         }
     }
 
-    createGame(playerId) {
+    async createGame(playerId, name, deckIds) {
         // Initialisation d'une nouvelle partie
-        const gameId = uuidv4()
+        const gameId = uuid();
+        const player = await this.createPlayer(playerId, name, deckIds)
         this.games[gameId] = {
             id: gameId,
-            players: [this.createPlayer(playerId)],
+            players: [player],
             currentPlayerId: playerId,
             status: 'waiting', // État de la partie
         };
+        console.log('Created a game ' + gameId + ' for player ' + playerId);
         return this.games[gameId];
-    }
-
-    havePlayersSelected(gameId) {
-        // Vérifie si les joueurs ont sélectionné leurs cartes
-        const game = this.games[gameId];
-        if (game) {
-            return game.players.every(player => player.selectedCard);
-        }
-        return false;
     }
 
     startGame(gameId) {
@@ -112,16 +80,18 @@ class GameManager {
         if (game) {
             game.status = 'started';
             // Attribution random du joueur qui commence
-            game.currentPlayerId = Math.floor(Math.random() * game.players.length);
+            game.currentPlayerId = game.players.at(Math.floor(Math.random() * game.players.length)).id;
             // TODO : emit START_GAME
+            getIO().to(gameId).emit('startGame', game);
+            this.beginNewTurn(gameId)
         }
     }
 
-    endGame(gameId) {
-        // Terminaison de la partie
+    endGame(gameId, winnerId) {
+        // Fin de la partie
         const game = this.games[gameId];
         if (game) {
-            // Logique de fin de partie
+            getIO().to(gameId).emit('gameEnded', winnerId);
             delete this.games[gameId]; // Suppression du jeu de la mémoire
         }
     }
@@ -134,24 +104,40 @@ class GameManager {
         // Passe au joueur suivant
         const game = this.games[gameId];
         if (game) {
-            const currentPlayerIndex = game.players.findIndex(player => player.id === game.currentPlayer.id);
-            game.currentPlayer = (currentPlayerIndex + 1) % game.players.length;
+            const currentPlayerIndex = game.players.findIndex(player => player.id === game.currentPlayerId);
+            game.currentPlayerId = game.players[(currentPlayerIndex + 1) % game.players.length].id;
 
             // TODO: emit BEGIN_TURN
+            getIO().to(gameId).emit('beginTurn', game.currentPlayerId);
         }
     }
 
     /** On PLAY_CARD **/
-    attack(gameId, playerId, cardId, targetCardId) {
+    attack(gameId, playerId, targetPlayer, cardId, targetCardId) {
         const player = this.games[gameId].players.find(player => player.id === playerId);
-        if (player.action > 0) {
-            const card = player.deck[cardId];
-            const targetCard = player.deck[targetCardId];
-            if (card && targetCard) {
-                targetCard.hp -= card.attack - targetCard.defense;
-                player.action--;
+        if (player.action < 0) {
+            return "Pas assez d'action"
+        }
+        const card = player.deck[cardId];
+        const targetCard = targetPlayer.deck[targetCardId];
+        if (card && targetCard) {
+            if (card.attack > targetCard.defense) {
+                // Si l'attaque est supérieure à la défense alors on l'attaque
+                if (targetCard.hp > card.attack - targetCard.defense) {
+                    targetCard.hp -= card.attack - targetCard.defense;
+                } else {
+                    // La carte est morte on la supprime
+                    delete targetPlayer.deck[targetCardId];
+                }
+            }
+            player.action--;
 
-                // TODO: Emit ATTACK && UPDATE_PLAYER
+            // TODO: Emit ATTACK && UPDATE_PLAYER Attention à gérer l'update des cartes du joueur
+            getIO().emit('attack', { gameId, playerId, cardId, targetCardId });
+            getIO().emit('updatePlayer', { gameId, playerId, player });
+
+            if(targetPlayer.deck.length === 0){
+                this.endGame(gameId, playerId);
             }
         }
     }
@@ -160,7 +146,6 @@ class GameManager {
     endTurn(gameId, playerId) {
         const player = this.games[gameId].players.find(player => player.id === playerId);
         if (player) {
-            // player.action = 10;
             this.beginNewTurn(gameId);
         }
     }
