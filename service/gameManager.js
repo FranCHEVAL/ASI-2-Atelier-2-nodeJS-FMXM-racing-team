@@ -84,6 +84,7 @@ class GameService {
 
     async getCards(cardsIds) {
         const cards = {}
+        console.log(cardsIds);
         for (const cardId of cardsIds) {
             cards[cardId] = await apiCallService.getCard(cardId);
         }
@@ -163,7 +164,7 @@ class GameService {
     }
 
     /** On PLAY_CARD **/
-    attack(gameId, playerId, targetPlayer, cardId, targetCardId) {
+    attack(gameId, playerId, targetPlayerId, cardId, targetCardId) {
         const game = this.games.get(gameId)
         const player = game.players.find(player => player.id === playerId);
         if (player.action < 0) {
@@ -173,7 +174,7 @@ class GameService {
             throw new Error("Ce n'est pas votre tour")
         }
         const card = player.deck[cardId];
-        const targetCard = targetPlayer.deck[targetCardId];
+        const targetCard = targetPlayerId.deck[targetCardId];
         if (card && targetCard) {
             if (card.attack > targetCard.defense) {
                 // Si l'attaque est supérieure à la défense alors on l'attaque
@@ -181,7 +182,7 @@ class GameService {
                     targetCard.hp -= card.attack - targetCard.defense;
                 } else {
                     // La carte est morte on la supprime
-                    delete targetPlayer.deck[targetCardId];
+                    delete targetPlayerId.deck[targetCardId];
                 }
             }
             player.action--;
