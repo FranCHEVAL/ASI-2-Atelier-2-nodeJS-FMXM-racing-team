@@ -5,21 +5,7 @@ const apiCallService = new ApiCallService();
 
 class GameManager {
     constructor() {
-        this.games = [{
-            id: '1234',
-            players: [{
-                id: '1234',
-                name: 'Player 1',
-                deck: {},
-            }, {
-                id: '5678',
-                name: 'Player 2',
-                deck: {},
-            }],
-            status: 'inProgress',
-            currentPlayerId: '1234',
-
-        }]; // Stocke les jeux en cours
+        this.games = new Map(); // Stocke les jeux en cours
     }
 
     /** ***************************** */
@@ -28,12 +14,11 @@ class GameManager {
 
     /** On JOIN_GAME **/
     async findGameOrCreate(player1, name, deckIds) {
-        for (const game of this.games) {
+        for (const game of this.games.values()) {
             if (game.status === 'waiting') {
                 console.log('Found a game ' + game.id + ' for player ' + player1);
                 const player = await this.createPlayer(player1, name, deckIds);
                 game.players.push(player);
-                this.startGame(game.id);
                 return game;
             }
         }
@@ -64,19 +49,27 @@ class GameManager {
         // Initialisation d'une nouvelle partie
         const gameId = uuid();
         const player = await this.createPlayer(playerId, name, deckIds)
-        this.games[gameId] = {
+        this.games.set(gameId, {
             id: gameId,
             players: [player],
             currentPlayerId: playerId,
             status: 'waiting', // État de la partie
-        };
+        });
         console.log('Created a game ' + gameId + ' for player ' + playerId);
-        return this.games[gameId];
+        return this.games.get(gameId);
+    }
+
+    checkIfGameNeedToStart(gameId) {
+        // Vérifie si le jeu peut démarrer
+        const game = this.games.get(gameId);
+        if (game && game.players.length === 2) {
+            this.startGame(gameId);
+        }
     }
 
     startGame(gameId) {
         // Démarrage du jeu
-        const game = this.games[gameId];
+        const game = this.games.get(gameId);
         if (game) {
             game.status = 'started';
             // Attribution random du joueur qui commence
@@ -89,10 +82,10 @@ class GameManager {
 
     endGame(gameId, winnerId) {
         // Fin de la partie
-        const game = this.games[gameId];
+        const game = this.games.get(gameId)
         if (game) {
             getIO().to(gameId).emit('gameEnded', winnerId);
-            delete this.games[gameId]; // Suppression du jeu de la mémoire
+            this.games.delete(gameId); // Suppression du jeu de la mémoire
         }
     }
 
@@ -102,7 +95,7 @@ class GameManager {
 
     beginNewTurn(gameId) {
         // Passe au joueur suivant
-        const game = this.games[gameId];
+        const game = this.games.get(gameId);
         if (game) {
             const currentPlayerIndex = game.players.findIndex(player => player.id === game.currentPlayerId);
             game.currentPlayerId = game.players[(currentPlayerIndex + 1) % game.players.length].id;
@@ -114,7 +107,7 @@ class GameManager {
 
     /** On PLAY_CARD **/
     attack(gameId, playerId, targetPlayer, cardId, targetCardId) {
-        const player = this.games[gameId].players.find(player => player.id === playerId);
+        const player = this.games.get(gameId).players.find(player => player.id === playerId);
         if (player.action < 0) {
             return "Pas assez d'action"
         }
@@ -144,7 +137,7 @@ class GameManager {
 
     /** On END_TURN **/
     endTurn(gameId, playerId) {
-        const player = this.games[gameId].players.find(player => player.id === playerId);
+        const player = this.games.get(gameId).players.find(player => player.id === playerId);
         if (player) {
             this.beginNewTurn(gameId);
         }
