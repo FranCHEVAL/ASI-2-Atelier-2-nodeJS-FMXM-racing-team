@@ -1,5 +1,7 @@
 import express from 'express'
 import {createServer} from 'http'
+import GameManager from "./service/gameManager.js";
+import ChatController from './controller/chatController.js';
 import {initIo} from "./socketServer.js";
 import { LOCALLINK } from './public/constants.js';
 import GameController from "./controller/gameController.js";
@@ -21,23 +23,9 @@ io.on('connection', (socket, idUser) => {
   // Controller Initialization
   GameController.init(socket, user);
 
-  socket.on('join',(roomPayload) => {
-    socket.join(roomPayload.sender);
-    console.log("User " + roomPayload.sender+ "is listening for new messages ")
-    const chat = chatHistory.filter(
-      x=>(x.sender==roomPayload.sender
-      &&x.receiver==roomPayload.receiver)||
-      (x.sender==roomPayload.receiver
-        &&x.receiver==roomPayload.sender)
-    )
-    io.to(roomPayload.sender).emit('loadChatHistory', chat)
-  })
-
-  socket.on('sendMessage', (data) => {
-    chatHistory.push(data)
-    io.to(data.receiver).emit('receiveMessage', data);
-  });
-
+  //Controller gestion du chat
+  ChatController.init(socket)
+ 
   socket.on('disconnect', () => {
     console.log('A user disconnected');
 
