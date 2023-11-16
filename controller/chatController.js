@@ -1,27 +1,21 @@
-import { getIO } from "../socketServer";
+import chatService from "../service/chatService";
+import userService from "../service/userService";
 
 class ChatController {
 
-    init(socket) {
+    init(socket ,user) {
 
-        const io = getIO()
+        socket.on('join',() => {
+            chatService.joinRoom(user.id)
+            userService.loadOnlineUser(user.id)
+        })
 
-        socket.on('join',(roomPayload) => {
-            socket.join(roomPayload.sender);
-            console.log("User " + roomPayload.sender+ "is listening for new messages ")
-            const chat = chatHistory.filter(
-              x=>(x.sender==roomPayload.sender
-              &&x.receiver==roomPayload.receiver)||
-              (x.sender==roomPayload.receiver
-                &&x.receiver==roomPayload.sender)
-            )
-            io.to(roomPayload.sender).emit('loadChatHistory', chat)
+        socket.on('askChatHistory', (distantUserId) =>{
+            chatService.loadChatHistory(user.id, distantUserId)
         })
         
         socket.on('sendMessage', (data) => {
-            chatHistory.push(data)
-            
-            io.to(data.receiver).emit('receiveMessage', data);
+            chatService.sendMessage(data)
         });
     }
     

@@ -12,24 +12,23 @@ const server = createServer(app);
 //For local developpement
 const io = initIo(server);
 
-const chatHistory = []
-
 app.use(express.static('/public'));
 
-io.on('connection', (socket, idUser) => {
+io.on('connection', (socket) => {
 
-  const user = UserService.authenticate(idUser);
+  const userId = socket.handshake.query
+  const user = UserService.authenticate(userId);
 
   // Controller Initialization
   GameController.init(socket, user);
 
   //Controller gestion du chat
-  ChatController.init(socket)
+  ChatController.init(socket, user);
  
   socket.on('disconnect', () => {
     console.log('A user disconnected');
 
-    gameManager.checkPlayerDisconnected(socket.id);
+    GameManager.checkPlayerDisconnected(socket.id);
 
   });
 
