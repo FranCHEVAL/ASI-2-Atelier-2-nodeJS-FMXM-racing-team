@@ -14,7 +14,7 @@ class UserService {
         }
     }
 
-    authenticate(socket) {
+    authenticate(idUser) {
         return undefined;
     }
 }

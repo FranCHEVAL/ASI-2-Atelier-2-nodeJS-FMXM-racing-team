@@ -38,6 +38,15 @@ class GameService {
         }
     }
 
+    onPlayerDisconnect(playerId) {
+        for (const game of this.games.values()) {
+            const player1 = game.players.find(player => player.id === playerId);
+            if (player1) {
+                this.endGame(game.id, game.players.find(player => player.id !== player1.id).id);
+            }
+        }
+    }
+
     /** ***************************** */
     /** Gestion début / fin de partie */
     /** ***************************** */
@@ -189,15 +198,6 @@ class GameService {
         const player = this.games.get(gameId).players.find(player => player.id === playerId);
         if (player) {
             this.beginNewTurn(gameId);
-        }
-    }
-
-    checkPlayerDisconnected(socketId) {
-        for (const game of this.games.values()) {
-            const player1 = game.players.find(player => player.socketId === socketId);
-            if (player1) {
-                this.endGame(game.id, game.players.find(player => player.id !== player1.id).id);
-            }
         }
     }
 }
