@@ -84,15 +84,18 @@ class GameService {
 
     async getCards(cardsIds) {
         const cards = {}
-        console.log(cardsIds);
+        console.log("getCards cards :" + cardsIds);
         for (const cardId of cardsIds) {
-            cards[cardId] = await apiCallService.getCard(cardId);
+             const card = await apiCallService.getCard(cardId);
+             console.dir(card);
+             cards[cardId] = card;
         }
         return cards
     }
 
     async createPlayer(playerId, name, deckIds, socketId) {
-        const cards = await this.getCards(deckIds)
+        const cards = await this.getCards(deckIds);
+        console.log("create player : cards : " + cards);
         return {
             id: playerId,
             name: name,
@@ -166,7 +169,9 @@ class GameService {
     /** On PLAY_CARD **/
     attack(gameId, playerId, targetPlayerId, cardId, targetCardId) {
         const game = this.games.get(gameId)
+        console.log(game);
         const player = game.players.find(player => player.id === playerId);
+        const targetPlayer = game.players.find(player => player.id === targetPlayerId);
         if (player.action < 0) {
             throw new Error("Pas assez d'action")
         }
@@ -174,24 +179,26 @@ class GameService {
             throw new Error("Ce n'est pas votre tour")
         }
         const card = player.deck[cardId];
-        const targetCard = targetPlayerId.deck[targetCardId];
+        const targetCard = targetPlayer.deck[cardId];
         if (card && targetCard) {
-            if (card.attack > targetCard.defense) {
+            if (card.attack > targetCard.defence) {
                 // Si l'attaque est supérieure à la défense alors on l'attaque
-                if (targetCard.hp > card.attack - targetCard.defense) {
-                    targetCard.hp -= card.attack - targetCard.defense;
+                if (targetCard.hp > card.attack - targetCard.defence) {
+                    targetCard.hp -= card.attack - targetCard.defence;
                 } else {
                     // La carte est morte on la supprime
-                    delete targetPlayerId.deck[targetCardId];
+                    delete targetPlayer.deck[targetCardId];
                 }
             }
             player.action--;
 
             // TODO: Emit ATTACK && UPDATE_PLAYER Attention à gérer l'update des cartes du joueur
-            getIO().emit('attack', {gameId, playerId, cardId, targetCardId});
-            getIO().emit('updatePlayer', {gameId, playerId, player});
+            console.log("emitting attack event and updateplayer event");
+            getIO().to(gameId).emit('attack', { gameId, playerId, cardId, targetCardId });
+            getIO().to(gameId).emit('updatePlayer', { gameId, player, targetPlayer });
 
-            if (targetPlayer.deck.length === 0) {
+
+            if(targetPlayer.deck.length === 0){
                 this.endGame(gameId, playerId);
             }
         }
