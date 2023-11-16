@@ -1,9 +1,9 @@
 import axios from "axios";
-import { BACKLINK, CARD } from "../public/constants";
+import { PROXYLINK, CARD } from "../public/constants.js";
 
 class ApiCallService {
     constructor() {
-        this.baseUrl = BACKLINK + '/' + CARD;
+        this.baseUrl = PROXYLINK + '/' + CARD;
         this.client = axios.create({ baseURL: this.baseUrl });
     }
 
