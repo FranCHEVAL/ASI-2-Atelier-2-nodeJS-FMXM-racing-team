@@ -14,6 +14,9 @@ class UserService {
         }
     }
 
+    authenticate(socket) {
+        return undefined;
+    }
 }
 
 const userService = new UserService();

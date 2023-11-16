@@ -1,20 +1,23 @@
 import express from 'express'
-import {Server} from 'socket.io'
 import {createServer} from 'http'
-import GameManager from "./service/gameManager.js";
 import {initIo} from "./socketServer.js";
 import { LOCALLINK } from './public/constants.js';
+import GameController from "./controller/gameController.js";
+import UserService from "./service/userService.js";
 const app = express();
 const server = createServer(app);
-const gameManager = new GameManager();
 
 //For local developpement
 const io = initIo(server);
 
 app.use(express.static('/public'));
 
-io.on('connection', (socket) => {
-  console.log('A user connected');
+io.on('connection', (socket, idUser) => {
+
+  const user = UserService.authenticate(idUser);
+
+  // Controller Initialization
+  GameController.init(socket, user);
 
   socket.on('join',(room) => {
     socket.join(room);
