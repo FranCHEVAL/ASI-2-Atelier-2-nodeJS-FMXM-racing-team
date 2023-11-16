@@ -3,9 +3,39 @@ import {getIO} from "../socketServer.js";
 import ApiCallService from "./ApiCallService.js";
 const apiCallService = new ApiCallService();
 
-class GameManager {
+class GameService {
     constructor() {
         this.games = new Map(); // Stocke les jeux en cours
+    }
+
+    /** ***************************** */
+    /**     Gestion des evenements    */
+    /** ***************************** */
+
+    onFindGame(playerId, name, deckIds, callback) {
+        this.findGameOrCreate(playerId, name, deckIds, socket.id).then((game) => {
+            socket.join(game.id);
+            callback({ status: 'ok', game: game });
+            this.checkIfGameNeedToStart(game.id);
+        });
+    }
+
+    onPlayerAttack(gameId, playerId, cardId, targetPlayerId, targetCardId, callback) {
+        try {
+            this.attack(gameId, playerId, cardId, targetCardId)
+            callback({ status: 'ok' });
+        } catch (e) {
+            callback({ status: 'error', message: e.message });
+        }
+    }
+
+    onEndTurn(gameId, playerId, callback) {
+        try {
+            this.endTurn(gameId, playerId)
+            callback({status: 'ok'});
+        } catch (e) {
+            callback({status: 'error', message: e.message});
+        }
     }
 
     /** ***************************** */
@@ -171,5 +201,4 @@ class GameManager {
         }
     }
 }
-
-export default GameManager;
+export default new GameService();

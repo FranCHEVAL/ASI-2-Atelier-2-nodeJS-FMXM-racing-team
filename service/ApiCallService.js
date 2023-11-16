@@ -7,12 +7,12 @@ class ApiCallService {
         this.client = axios.create({ baseURL: this.baseUrl });
     }
 
-    async getAllCards() {
+    async getUser(id) {
         try {
-            const response = await this.client.get('/cards');
+            const response = await this.client.get(`/user/${id}`);
             return response.data;
         } catch (error) {
-            console.error('Error fetching all cards:', error);
+            console.error(`Error fetching user with id ${id}:`, error);
             throw error;
         }
     }
@@ -28,4 +28,4 @@ class ApiCallService {
     }
 }
 
-export default ApiCallService;
+export default new ApiCallService();

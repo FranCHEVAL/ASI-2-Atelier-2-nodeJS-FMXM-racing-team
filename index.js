@@ -32,35 +32,6 @@ io.on('connection', (socket) => {
 
   });
 
-  /** Action du jeu */
-
-  socket.on('findGame', (playerId, name, deckIds, callback) => {
-    gameManager.findGameOrCreate(playerId, name, deckIds, socket.id).then((game) => {
-      socket.join(game.id);
-      callback({ status: 'ok', game: game });
-      io.to(game.id).emit('playerJoined', { playerId: playerId, playerName: game.players.find(player => player.id === playerId).name });
-      gameManager.checkIfGameNeedToStart(game.id);
-    });
-  });
-
-  socket.on('playerAttack', (gameId, playerId, cardId, targetPlayerId, targetCardId, callback) => {
-    try {
-      gameManager.attack(gameId, playerId, cardId, targetCardId)
-      callback({ status: 'ok' });
-    } catch (e) {
-      callback({ status: 'error', message: e.message });
-    }
-  });
-
-  socket.on('endTurn', (gameId, playerId, callback) => {
-    try {
-      gameManager.endTurn(gameId, playerId)
-      callback({status: 'ok'});
-    } catch (e) {
-      callback({status: 'error', message: e.message});
-    }
-  });
-
 });
 
 server.listen(3100, () => {
