@@ -3,6 +3,7 @@ import {Server} from 'socket.io'
 import {createServer} from 'http'
 import GameManager from "./service/gameManager.js";
 import {initIo} from "./socketServer.js";
+import { LOCALLINK } from './public/constants.js';
 const app = express();
 const server = createServer(app);
 const gameManager = new GameManager();
@@ -63,5 +64,5 @@ io.on('connection', (socket) => {
 });
 
 server.listen(3100, () => {
-  console.log('Server is running on http://localhost:3100');
+  console.log('Server is running on ' + LOCALLINK);
 });

@@ -1,8 +1,9 @@
 import axios from "axios";
+import { BACKLINK, CARD } from "../public/constants";
 
 class ApiCallService {
     constructor() {
-        this.baseUrl = 'http://127.0.0.1:8084'; // Remplacez par votre URL de base
+        this.baseUrl = BACKLINK + '/' + CARD;
         this.client = axios.create({ baseURL: this.baseUrl });
     }
 
