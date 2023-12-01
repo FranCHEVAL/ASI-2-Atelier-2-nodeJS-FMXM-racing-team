@@ -5,7 +5,7 @@ let io;
 export const initIo = (server) => {
     io = new Server(server, {
         cors: {
-            origin: 'localhost:3000',
+            origin: '*',
         }
     });
     console.log('Socket.io initialized');
