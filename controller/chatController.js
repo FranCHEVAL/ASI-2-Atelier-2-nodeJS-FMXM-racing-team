@@ -1,5 +1,5 @@
-import chatService from "../service/chatService";
-import userService from "../service/userService";
+import chatService from "../service/chatService.js";
+import userService from "../service/userService.js";
 
 class ChatController {
 
