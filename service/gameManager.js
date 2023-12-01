@@ -84,7 +84,6 @@ class GameService {
 
     async getCards(cardsIds) {
         const cards = {}
-        console.log("getCards cards :" + cardsIds);
         for (const cardId of cardsIds) {
              const card = await apiCallService.getCard(cardId);
              console.dir(card);
@@ -179,7 +178,8 @@ class GameService {
             throw new Error("Ce n'est pas votre tour")
         }
         const card = player.deck[cardId];
-        const targetCard = targetPlayer.deck[cardId];
+        const targetCard = targetPlayer.deck[targetCardId];
+        console.log("emitting attack event and updateplayer event");
         if (card && targetCard) {
             if (card.attack > targetCard.defence) {
                 // Si l'attaque est supérieure à la défense alors on l'attaque
@@ -194,11 +194,11 @@ class GameService {
 
             // TODO: Emit ATTACK && UPDATE_PLAYER Attention à gérer l'update des cartes du joueur
             console.log("emitting attack event and updateplayer event");
-            getIO().to(gameId).emit('attack', { gameId, playerId, cardId, targetCardId });
             getIO().to(gameId).emit('updatePlayer', { gameId, player, targetPlayer });
 
-
-            if(targetPlayer.deck.length === 0){
+            const test = Object.values(targetPlayer.deck).length;
+            const test3 = _.isEmpty(targetPlayer.deck);
+            if(_.isEmpty(targetPlayer.deck)){
                 this.endGame(gameId, playerId);
             }
         }
