@@ -4,7 +4,6 @@ class GameController {
     init(socket, user) {
 
         // Injection de l'user dans les méthodes
-
         socket.on('findGame', (name, deckIds, callback) => {
             gameManager.onFindGame(user.id, name, deckIds, callback)
         })

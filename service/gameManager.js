@@ -1,7 +1,7 @@
 import { uuid } from 'uuidv4';
 import {getIO} from "../socketServer.js";
 import ApiCallService from "./ApiCallService.js";
-const apiCallService = new ApiCallService();
+const apiCallService = ApiCallService;
 
 class GameService {
     constructor() {

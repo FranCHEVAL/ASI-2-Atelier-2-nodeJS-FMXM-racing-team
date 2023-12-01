@@ -1,3 +1,4 @@
+import { getIO } from "../socketServer.js";
 import apiCallService from "./ApiCallService.js";
 
 class UserService {
@@ -14,7 +15,13 @@ class UserService {
         }
     }
 
+    loadOnlineUser(user){
+        const onlineUsers = this.onlineUsers.filter(x=>x!==user)
+        getIO().to(user.id).emit('onLoadOnlineUser', onlineUsers)
+    }
+
     authenticate(idUser) {
+        //TO DO : check if user exist
         return undefined;
     }
 }
