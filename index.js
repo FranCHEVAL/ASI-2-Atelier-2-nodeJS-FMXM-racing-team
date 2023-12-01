@@ -6,16 +6,13 @@ import {initIo} from "./socketServer.js";
 import { LOCALLINK } from './public/constants.js';
 import GameController from "./controller/gameController.js";
 import UserService from "./service/userService.js";
-import cors from 'cors';
 
-const cors = require(cors);
 const app = express();
 const server = createServer(app);
 
 //For local developpement
 const io = initIo(server);
 
-app.use(cors());
 app.use(express.static('/public'));
 
 io.on('connection', (socket) => {
