@@ -8,7 +8,7 @@ class ChatService {
         this.chatHistory = []; // Stocke l'intégralité des messages
     }
 
-    joinRoom(userId){
+    joinRoom(socket, userId){
         socket.join(userId);
         console.log("User " + userId+ "is listening for new messages ");
     }

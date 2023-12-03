@@ -8,10 +8,15 @@ class UserService {
     }
 
     async getUser(id) {
-        const user = await apiCallService.getUser(id)
-        if (user) {
-            this.onlineUsers.push(user)
-            return user
+        try {
+            const user = await apiCallService.getUser(id)
+            if (user) {
+                this.onlineUsers.push(user)
+                return user
+            }
+        } catch (error) {
+            console.error(`Error fetching user with id ${id}:`, error);
+            return null
         }
     }
 
@@ -20,9 +25,8 @@ class UserService {
         getIO().to(user.id).emit('onLoadOnlineUser', onlineUsers)
     }
 
-    authenticate(idUser) {
-        //TO DO : check if user exist
-        return undefined;
+    async authenticate(idUser) {
+        return await this.getUser(idUser);
     }
 }
 

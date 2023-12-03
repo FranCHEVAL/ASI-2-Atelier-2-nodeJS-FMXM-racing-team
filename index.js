@@ -16,23 +16,31 @@ const io = initIo(server);
 app.use(express.static('/public'));
 
 io.on('connection', (socket) => {
+  const userId = socket.handshake.query.userId;
 
-  const userId = socket.handshake.query
-  const user = UserService.authenticate(userId);
+  console.log('Connection attempted FOR for user ', userId);
+  const user = UserService.authenticate(userId).then(user => {
+    if (!user) {
+      console.log('User not found');
+      socket.disconnect();
+      return;
+    }
+    // Controller Initialization
+    GameController.init(socket, user);
 
-  // Controller Initialization
-  GameController.init(socket, user);
+    //Controller gestion du chat
+    ChatController.init(socket, user);
 
-  //Controller gestion du chat
-  ChatController.init(socket, user);
- 
-  socket.on('disconnect', () => {
-    console.log('A user disconnected');
+    socket.on('disconnect', () => {
+      console.log('A user disconnected');
 
-    GameManager.checkPlayerDisconnected(socket.id);
+      GameManager.checkPlayerDisconnected(userId);
 
-  });
-
+    });
+  }).catch(error => {
+    console.log('Error while authenticating user', error);
+    socket.disconnect();
+  })
 });
 
 server.listen(3100, () => {

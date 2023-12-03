@@ -9,13 +9,14 @@ class GameService {
     }
 
     /** ***************************** */
+
     /**     Gestion des evenements    */
     /** ***************************** */
 
     onFindGame(playerId, name, deckIds, callback) {
         this.findGameOrCreate(playerId, name, deckIds, socket.id).then((game) => {
             socket.join(game.id);
-            callback({ status: 'ok', game: game });
+            callback({status: 'ok', game: game});
             this.checkIfGameNeedToStart(game.id);
         });
     }
@@ -23,9 +24,9 @@ class GameService {
     onPlayerAttack(gameId, playerId, cardId, targetPlayerId, targetCardId, callback) {
         try {
             this.attack(gameId, playerId, cardId, targetCardId)
-            callback({ status: 'ok' });
+            callback({status: 'ok'});
         } catch (e) {
-            callback({ status: 'error', message: e.message });
+            callback({status: 'error', message: e.message});
         }
     }
 
@@ -49,6 +50,7 @@ class GameService {
 
     /** ***************************** */
     /** Gestion début / fin de partie */
+
     /** ***************************** */
 
     /** On JOIN_GAME **/
@@ -72,10 +74,10 @@ class GameService {
 
     checkPlayerAlreadyInGame(player1) {
         for (const game of this.games.values()) {
-                const player = game.players.find(player => player.id === player1);
-                if (player) {
-                    return game;
-                }
+            const player = game.players.find(player => player.id === player1);
+            if (player) {
+                return game;
+            }
         }
         return undefined;
     }
@@ -144,6 +146,7 @@ class GameService {
     }
 
     /** ***************************** */
+
     /**    Gestion des tours de jeu   */
     /** ***************************** */
 
@@ -164,7 +167,7 @@ class GameService {
         const game = this.games.get(gameId)
         const player = game.players.find(player => player.id === playerId);
         if (player.action < 0) {
-           throw new Error("Pas assez d'action")
+            throw new Error("Pas assez d'action")
         }
         if (playerId !== game.currentPlayerId) {
             throw new Error("Ce n'est pas votre tour")
@@ -184,10 +187,10 @@ class GameService {
             player.action--;
 
             // TODO: Emit ATTACK && UPDATE_PLAYER Attention à gérer l'update des cartes du joueur
-            getIO().emit('attack', { gameId, playerId, cardId, targetCardId });
-            getIO().emit('updatePlayer', { gameId, playerId, player });
+            getIO().emit('attack', {gameId, playerId, cardId, targetCardId});
+            getIO().emit('updatePlayer', {gameId, playerId, player});
 
-            if(targetPlayer.deck.length === 0){
+            if (targetPlayer.deck.length === 0) {
                 this.endGame(gameId, playerId);
             }
         }
@@ -200,5 +203,16 @@ class GameService {
             this.beginNewTurn(gameId);
         }
     }
+
+    checkPlayerDisconnected(id) {
+        this.games.forEach(game => {
+            game.players.forEach(player => {
+                if (player.id === id) {
+                    this.endGame(game.id, game.players.find(player => player.id !== id).id);
+                }
+            })
+        })
+    }
 }
+
 export default new GameService();

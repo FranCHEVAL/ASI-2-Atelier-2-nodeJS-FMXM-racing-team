@@ -6,7 +6,7 @@ class ChatController {
     init(socket ,user) {
 
         socket.on('join',() => {
-            chatService.joinRoom(user.id)
+            chatService.joinRoom(socket, user.id)
             userService.loadOnlineUser(user.id)
         })
 
