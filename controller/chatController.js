@@ -8,7 +8,7 @@ class ChatController {
         socket.on('join',() => {
             chatService.joinRoom(socket, user.id)
             userService.loadOnlineUser(user.id)
-        })
+        }) 
 
         socket.on('askChatHistory', (distantUserId) =>{
             chatService.loadChatHistory(user.id, distantUserId)
